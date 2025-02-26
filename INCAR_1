@@ -1,0 +1,21 @@
+SYSTEM =  - local optimisation
+PREC = normal
+EDIFF = 1e-6
+IBRION = 2
+ISIF = 3
+NSW = 300
+ISMEAR = 0 ; SIGMA = 0.05
+POTIM = 0.5
+#Wavefunction and charge
+LWAVE = FALSE
+LCHARG = FALSE
+ISTART = 0
+#Target Pressure
+PSTRESS = 0.01 
+ALGO=fast
+#Crude optimisation
+EDIFFG = -2e-1
+NELM = 100
+
+LPLANE=.TRUE.
+LREAL = Auto
