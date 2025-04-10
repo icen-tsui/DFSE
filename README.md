@@ -72,19 +72,18 @@ Atoms_type=3
 ```
 ```bash
 ### basic information for searching
-SystemName=Hf4O8
-NumberOfSpecies=2
-NumberOfElements=4 8
-NameOfElements=Hf  O 
+SystemName=TiPbO3
+NumberOfSpecies=3
+NumberOfElements=1 1 3
+NameOfElements=Ti Pb O
 DistanceOfAtom=
-DIS1=$DIS1_1 $DIS1_2 #$DIS1_3
-DIS2=$DIS2_1 $DIS2_2 #$DIS2_3
-#DIS3=$DIS3_1 $DIS3_2 $DIS3_3
+$formatted_DIS_lines
 Population=10
 MaxStep=1
-#Volumn=$Volumn
-#2D system setting
-Q2D=T
+Volumn=$Volume
+
+#2D system setting 
+Q2D=F
 vacuum_layer=15
 Area=$AREA
 Layer_height=$LAYER_HEIGHT
