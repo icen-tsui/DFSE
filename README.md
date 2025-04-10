@@ -43,52 +43,32 @@ We highly recommand to use DFSE in a  high-performance cluster, with vaspkit too
 ### running environment parameters( Slurm & linux )
 ```bash
 #!/bin/sh
-#SBATCH -J HfO2-2d-12-atoms
-#SBATCH -N 1
-#SBATCH -n 48
-#SBATCH -t 168:0:0
-#SBATCH -p wholenodeQ
-#SBATCH --output=%j.out
-#SBATCH --error=%j.err
-
-export LD_LIBRARY_PATH=/public/software/compiler/intel-compiler/2021.3.0/mkl/lib/intel64/:$LD_LIBRARY_PATH
-#module load mpi/intelmpi/2021.3.0
-#module load apps/vasp/intelmpi/5.4.4
-cd $SLURM_SUBMIT_DIR
-#mpirun -np 48 /public/software/apps/vasp/intelmpi/5.4.4/bin/vasp_std >out.vasp
-source /public/home/win0812/intel/oneapi/setvars.sh --force
-export PATH=/public/home/win0812/intel/oneapi/mkl:$PATH
-
-export PATH=/public/home/win0812/gcc/gcc-12.1.0/objdir/bin:/public/home/win0812/gcc/gcc-12.1.0/objdir/lib64:$PATH
-export LD_LIBRARY_PATH=/public/home/win0812/gcc/gcc-12.1.0/objdir/lib/:/public/home/win0812/gcc/gcc-12.1.0/objdir/lib64/:$LD_LIBRARY_PATH
-
 ulimit -s unlimited
 chmod 777 de.x 
-conda activate  ferroelectric_search
 # Output files
 results_file="./results.dat"
 log_file="./run.log"
-num_parallel=48    # Number of parallel processes
-IM2ODE_runtime=300
+num_parallel=24    # Number of parallel processes
+IM2ODE_runtime=60
 Perturbation_times=2
 MAX_LOOPS=5 #for sturcture relaxzation
 MAX_TIME1=7200 #for one time vasp max running time in second when relax the reference phase
 MAX_TIME2=12800 #for  one time vasp max running time in second when relax the ferroelectric candidates
 #please change VASP_COMMAND for your environment
-VASP_COMMAND="mpirun -np 48 /public/home/win0812/software/vasp.5.4.4/bin/vasp_std"
-# Function to generate random numbers within a specified range
+VASP_COMMAND="mpirun -np 24 /opt/vasp.5.4.4/bin/vasp_std"
 ```
 ### IM<sup>2</sup>ODE running parameters
 ```bash
 # Ranges for the variables
-DIS_min=1.5  #Distance matrix
-DIS_max=4.0
-Volumn_min=240.0  # Volumn for 3D searching
-Volumn_max=300.0
-AREA_min=24.0     #Area for 2D searching
+DIS_min=1.2   #Atoms distance
+DIS_max=3.0
+Volumn_min=60.0    #volume for 3D structures
+Volumn_max=70.0
+AREA_min=24.0     #area for 2D structures
 AREA_max=27.0
-LAYER_HEIGHT_min=5.0  #Layer height for 2D searching
+LAYER_HEIGHT_min=5.0    #layer height for 2D sturctures
 LAYER_HEIGHT_max=7.0
+Atoms_type=3
 ```
 ```bash
 ### basic information for searching
