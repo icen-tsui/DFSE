@@ -219,10 +219,30 @@ elif sys.argv[1]  == 'generate_ferroelectric_phase':
     with open('de_ini_1',errors='ignore') as file:
         content = file.readlines()
         population_value = int(len(content)/(8+sum_of_numbers))
+    
+    #screening the relax failed refer POSCAR
+    failed_ids = []
+    last_id = None
+
+    with open(r'./main.log', 'r') as f:
+        lines = f.readlines()
+
+        for line in lines:
+            line = line.strip()
+            match = re.fullmatch(r'refer-POSCAR(\d+)', line)
+            if match:
+                last_id = match.group(1)
+            elif line == 'relax failed' and last_id:
+                failed_ids.append(last_id)
+                last_id = None
+
     for index in range(int(population_value) + 1)[1:]:
         for loop_index in range(int(ferro_phase_num)+1)[1:]:
             try:
-                add_perturbation("refer-POSCAR" + str(index) + '/CONTCAR',Q2D=Q2D,FQFE=FQFE,loop_index=loop_index)
+                if index in failed_ids:
+                    continue
+                else:
+                    add_perturbation("refer-POSCAR" + str(index) + '/CONTCAR',Q2D=Q2D,FQFE=FQFE,loop_index=loop_index)
             except(IndexError):
                 print('the file might be empty, will jump this run, this run is refer-POSCAR'+str(index))
 
@@ -497,8 +517,7 @@ elif sys.argv[1]  == 'process_data':
                 file.write("\n")
 
         with open(res_target_energy_path, 'w',encoding= 'utf-8') as file:
-            filtered_items = [item for item in target_merged_data.items() if 'energy' in item[1] and isinstance(item[1]['energy'], tuple)]
-            sorted_res = sorted(filtered_items, key=lambda item: item[1]['energy'][0])
+            sorted_res = sorted(target_merged_data.items(), key=lambda item: item[1]['energy'][0])
             sorted_res_re = [{'id':i[0],'info':i[1]} for i in sorted_res]
             for data in sorted_res_re:
                 file.write(f"POSCAR {data['id']} energy per atoms {data['info']['energy'][0]} {data['info']['energy'][1]}:\n")
