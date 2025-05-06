@@ -1,6 +1,8 @@
 #!/bin/sh
 ulimit -s unlimited
-chmod 777 de.x 
+chmod 777 *
+
+pick_up="T" #change T or F to make pick up for previous running DFSE
 # Output files
 results_file="./results.dat"
 log_file="./run.log"
@@ -16,8 +18,8 @@ VASP_COMMAND="mpirun -np 24 /opt/vasp.5.4.4/bin/vasp_std"
 # Ranges for the variables
 DIS_min=1.2
 DIS_max=3.0
-Volumn_min=60.0
-Volumn_max=70.0
+Volume_min=60.0
+Volume_max=70.0
 AREA_min=24.0
 AREA_max=27.0
 LAYER_HEIGHT_min=5.0
@@ -25,14 +27,16 @@ LAYER_HEIGHT_max=7.0
 Atoms_type=3
 
 #run sampling for reference phase
-python sampling.py --num_samples=$IM2ODE_runtime --atoms_type=$Atoms_type --DIS_min=$DIS_min --DIS_max=$DIS_max --step=0.1 --volume_min=$Volumn_min --volume_max=$Volumn_max --area_min=$AREA_min --area_max=$AREA_max --height_min=$LAYER_HEIGHT_min --height_max=$LAYER_HEIGHT_max
+python3 sampling.py --num_samples=$IM2ODE_runtime --atoms_type=$Atoms_type --DIS_min=$DIS_min --DIS_max=$DIS_max --step=0.1 --volume_min=$Volume_min --volume_max=$Volume_max --area_min=$AREA_min --area_max=$AREA_max --height_min=$LAYER_HEIGHT_min --height_max=$LAYER_HEIGHT_max
 
 # Maximum runtime for each simulation in seconds
 max_runtime=120  # Example: 300 seconds
 
+if [ "$pick_up" != "T" ]; then
 # Clear log file and results file
-> $log_file
-> $results_file
+  > $log_file
+  > $results_file
+fi
 
 # Function to generate configuration and run the simulation
 run_simulation() {
@@ -50,21 +54,18 @@ import json
 with open('LHS_samples.json') as f:
     samples = json.load(f)
 i = $i
-print(*samples[i])  # 直接按顺序输出所有值
+print(*samples[i])
 ")
 
     num_DIS_variables=$((Atoms_type * Atoms_type))
     declare -a DIS_values
 
-    # 解析 JSON 输出
     read -ra sample_array <<< "$sample_data"
 
-# 读取 DIS 数据
     for ((j=0; j<num_DIS_variables; j++)); do
         DIS_values[$j]=${sample_array[$j]}
     done
 
-# 读取体积、面积、高度
     Volume=${sample_array[$num_DIS_variables]}
     AREA=${sample_array[$num_DIS_variables + 1]}
     LAYER_HEIGHT=${sample_array[$num_DIS_variables + 2]}
@@ -226,40 +227,56 @@ EOL
 export -f run_simulation
 export DIS_min DIS_max AREA_min AREA_max Volumn_max Volumn_min LAYER_HEIGHT_min LAYER_HEIGHT_max Atoms_type max_runtime log_file results_file
 
-seq 1 $IM2ODE_runtime | xargs -n 1 -P $num_parallel -I {} bash -c 'run_simulation "$@"' _ {}
-python3 screening_POSCAR.py
-# Delete work directories 
-for i in $(seq 1 $IM2ODE_runtime); do
-    if [ -d "work_dir_$i" ]; then
-        rm -rf "work_dir_$i"
-    fi
-done
-sleep 10
+if [ "$pick_up" != "T" ]; then
+   seq 1 $IM2ODE_runtime | xargs -n 1 -P $num_parallel -I {} bash -c 'run_simulation "$@"' _ {}
+   python3 screening_POSCAR.py
+   # Delete work directories 
+   for i in $(seq 1 $IM2ODE_runtime); do
+      if [ -d "work_dir_$i" ]; then
+         rm -rf "work_dir_$i"
+       fi
+   done
+   sleep 10
 
-cd ./results
-cp ../INCAR_* ./
-cp ../*.py ./
-judge_string="reached required accuracy - stopping structural energy minimisation"
-main_dir=$(pwd)
+   cd ./results
+   cp ../INCAR_* ./
+   cp ../*.py ./
+   judge_string="reached required accuracy - stopping structural energy minimisation"
+   main_dir=$(pwd)
 
-python3 get_POSCAR.py
-rm de_ini_1
-for i  in POSCAR*;
-do
-cat $i >> de_ini_1
-done
+   python3 get_POSCAR.py
+   rm de_ini_1
+   for i  in POSCAR*;
+   do
+      cat $i >> de_ini_1
+   done
 
-sleep 20
-rm POSCAR*
+   sleep 20
+   rm POSCAR*
+   python3 ferroelectric_search.py 'generate_refer_phase'
+else
+   cd ./results
+   cp ../INCAR_* ./
+   cp ../*.py ./
+   judge_string="reached required accuracy - stopping structural energy minimisation"
+   main_dir=$(pwd)
+fi
 
-python3 ferroelectric_search.py 'generate_refer_phase'
+done_list=$(head -n -1 "$main_dir/main.log" | grep -oE 'refer-POSCAR[0-9]+' | sort -u)
 # Cyclic optimisation reference phase, self-consistency, berryphase
 for i in refer-POSCAR* ; do
-    echo $i >> "$main_dir/refer_polar_info.dat"
-    echo $i >> "$main_dir/main.log"
+    if echo "$done_list" | grep -q "^$i$"; then
+      continue
+    fi
+
+    last_line=$(tail -n 1 "$main_dir/main.log")
+    if [[ ! "$last_line" =~ ^refer-POSCAR ]]; then
+        echo "$i" >> "$main_dir/main.log"
+        echo "$i" >> "$main_dir/refer_polar_info.dat"
+    fi
     cp INCAR_* $i/
-    cp POSCAR POSCAR-origin
     cd $i/
+    cp POSCAR POSCAR-origin
     vaspkit -task 102 -kpr 0.04
     cp INCAR_1 INCAR
     START_TIME=$(date +%s)
@@ -277,33 +294,34 @@ for i in refer-POSCAR* ; do
         echo "runtime_$count $ELAPSED_MINUTES minutes" >> relax.log
     fi
 
-    if [ $ECLAPSE_TIME -ge $MAX_TIME ]; then
+    count=0
+    found=0
+
+    if [ $ELAPSED_SECONDS -ge $MAX_TIME ]; then
          count=$MAX_LOOPS
     fi
-    found=0
-    count=0
-     
+
     while [ $found -eq 0 ] && [ $count -lt $MAX_LOOPS ];do
        ((count++))
        if grep -q "$judge_string" "relax.log";then
-	   found=1
-	   echo "relax has done" >> "$main_dir/main.log"
-           cp CONTCAR POSCAR
-           vaspkit -task 102 -kpr 0.04
-           cp INCAR_2 INCAR
-           rm POTCAR
-           vaspkit -task 103
-           $VASP_COMMAND
-	   result=$(python3 "$main_dir/ferroelectric_search.py" ./EIGENVAL)
+	     found=1
+	     echo "relax has done" >> "$main_dir/main.log"
+       cp CONTCAR POSCAR
+       vaspkit -task 102 -kpr 0.04
+       cp INCAR_2 INCAR
+       rm POTCAR
+       vaspkit -task 103
+       $VASP_COMMAND
+	     result=$(python3 "$main_dir/ferroelectric_search.py" ./EIGENVAL)
 
-           if [ "$result" = "not_metal" ]; then
-               cp INCAR_3 INCAR
-	       $VASP_COMMAND
-               grep 'Total electronic dipole moment' OUTCAR | awk '{print $6, $7, $8}' >> "$main_dir/refer_polar_info.dat"
-               grep 'Ionic dipole moment' OUTCAR | awk '{print $5, $6, $7}' >> "$main_dir/refer_polar_info.dat"
-           else
-               echo "Sorry, seems this phase is metal, will set the berry phase value as 0" >> "$main_dir/refer_polar_info.dat"
-           fi
+       if [ "$result" = "not_metal" ]; then
+          cp INCAR_3 INCAR
+	        $VASP_COMMAND
+          grep 'Total electronic dipole moment' OUTCAR | awk '{print $6, $7, $8}' >> "$main_dir/refer_polar_info.dat"
+          grep 'Ionic dipole moment' OUTCAR | awk '{print $5, $6, $7}' >> "$main_dir/refer_polar_info.dat"
+       else
+          echo "Sorry, seems this phase is metal, will set the berry phase value as 0" >> "$main_dir/refer_polar_info.dat"
+       fi
 	else
            cp CONTCAR POSCAR
            vaspkit -task 102 -kpr 0.04
@@ -318,17 +336,28 @@ for i in refer-POSCAR* ; do
 	   echo "relax failed" >> "$main_dir/main.log"
    fi
    phonopy --symmetry  --tolerance=1.0e-1  -c CONTCAR >> sym.log
+   sleep 10
    cp PPOSCAR CONTCAR
    cd ../
 done
 
-python3 ferroelectric_search.py 'generate_ferroelectric_phase' $Perturbation_times
-
+if compgen -G "POSCAR-*/" > /dev/null; then
+    echo "POSCAR-* folder(s) found, continue running"
+else
+    python3 ferroelectric_search.py 'generate_ferroelectric_phase' $Perturbation_times
+fi
+done_list=$(head -n -1 "$main_dir/main.log" | grep -oE 'POSCAR-[0-9]+-[0-9]+' | sort -u)
 # Cyclic optimisation of ferroelectric phase, self-consistency, berryphase
 for i in POSCAR-* ; do
-    echo $i >> "$main_dir/target_polar_info.dat"
-    echo $i >> "$main_dir/main.log"
-    echo $i >> "$main_dir/target_polar_energy.dat"
+    if echo "$done_list" | grep -q "^$i$"; then
+        continue
+    fi
+    last_line=$(tail -n 1 "$main_dir/main.log")
+    if [[ ! "$last_line" =~ ^POSCAR- ]]; then
+      echo "$i" >> "$main_dir/main.log"
+      echo "$i" >> "$main_dir/target_polar_info.dat"
+      echo "$i" >> "$main_dir/target_polar_energy.dat"
+    fi
     cp INCAR_* $i/
     cd $i/
     cp POSCAR POSCAR-origin
@@ -343,7 +372,7 @@ for i in POSCAR-* ; do
     ELAPSED_MINUTES=$((ELAPSED_SECONDS / 60))
     ELAPSED_HOURS=$((ELAPSED_MINUTES / 60))
 
-    if [ $ELAPSED_HOURS -gt 0 ]; then
+    if [ $ELAPSED_SECONDS -ge $MAX_TIME ]; then
         echo "runtime_$count $ELAPSED_HOURS hours $((ELAPSED_MINUTES % 60)) minutes" >> relax.log
     else
         echo "runtime_$count $ELAPSED_MINUTES minutes" >> relax.log
@@ -389,12 +418,12 @@ for i in POSCAR-* ; do
    energy=$(grep 'free energy' OUTCAR | awk 'END{print $5}')
    energy_per_atom=$(echo "scale=6; $energy / $atoms_numbers_sum" | bc)
    echo "$energy_per_atom" >> "$main_dir/target_polar_energy.dat"
-   unset atoms_numbers_info; unset atoms_numbers_sum; unset energy; unset energy_per_atom
    cd ../
 done
 # sort out the refer_phase and ferroelectric phase
 python3 "$main_dir/ferroelectric_search.py" 'process_data'
-python3 export_figure.py
+python3 "$main_dir/export_figure.py"
+
 
 
 
