@@ -44,7 +44,9 @@ We highly recommand to use DFSE in a  high-performance cluster, with vaspkit too
 ```bash
 #!/bin/sh
 ulimit -s unlimited
-chmod 777 de.x 
+chmod 777 *
+
+pick_up="T" #change T or F to make pick up for previous running DFSE
 # Output files
 results_file="./results.dat"
 log_file="./run.log"
