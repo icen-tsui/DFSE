@@ -306,7 +306,7 @@ elif sys.argv[1]  == 'process_data':
             atoms_equaled = []
             for atom in atoms:
                 if Q2D:
-                    atom = generate_equal_atoms(atom)
+                    atom = generate_equal_atoms(atom,Q2D)
                 else:
                     atom = generate_equal_atoms_3D(atom)
                 for i in range(len(atom)):
@@ -357,7 +357,7 @@ elif sys.argv[1]  == 'process_data':
         for atoms in atoms_info_list.values():
             atoms_equaled = []
             for atom in atoms:
-                atom = generate_equal_atoms(atom)
+                atom = generate_equal_atoms(atom,Q2D)
                 for i in range(len(atom)):
                     if atom[i] < 0:
                         atom[i] += 1
