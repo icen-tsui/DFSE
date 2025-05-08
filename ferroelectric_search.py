@@ -3,6 +3,9 @@ import random
 import re
 import shutil
 import sys
+from codecs import ignore_errors
+from inspect import Traceback
+
 import numpy as np
 import yaml
 from pymatgen.core import Structure
@@ -219,30 +222,10 @@ elif sys.argv[1]  == 'generate_ferroelectric_phase':
     with open('de_ini_1',errors='ignore') as file:
         content = file.readlines()
         population_value = int(len(content)/(8+sum_of_numbers))
-    
-    #screening the relax failed refer POSCAR
-    failed_ids = []
-    last_id = None
-
-    with open(r'./main.log', 'r') as f:
-        lines = f.readlines()
-
-        for line in lines:
-            line = line.strip()
-            match = re.fullmatch(r'refer-POSCAR(\d+)', line)
-            if match:
-                last_id = match.group(1)
-            elif line == 'relax failed' and last_id:
-                failed_ids.append(last_id)
-                last_id = None
-
     for index in range(int(population_value) + 1)[1:]:
         for loop_index in range(int(ferro_phase_num)+1)[1:]:
             try:
-                if index in failed_ids:
-                    continue
-                else:
-                    add_perturbation("refer-POSCAR" + str(index) + '/CONTCAR',Q2D=Q2D,FQFE=FQFE,loop_index=loop_index)
+                add_perturbation("refer-POSCAR" + str(index) + '/CONTCAR',Q2D=Q2D,FQFE=FQFE,loop_index=loop_index)
             except(IndexError):
                 print('the file might be empty, will jump this run, this run is refer-POSCAR'+str(index))
 
@@ -283,7 +266,7 @@ elif sys.argv[1]  == 'process_data':
     regex_pattern_Q2D = r'^\s*Q2D\s*=\s*\.\s*true\s*'
     pattern_Q2D = re.compile(regex_pattern_Q2D, re.IGNORECASE)
     file_path = '../test.sh'
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r',encoding='utf-8') as file:
         Q2D = any(pattern_Q2D.match(line) for line in file)
 
 
@@ -306,7 +289,7 @@ elif sys.argv[1]  == 'process_data':
             atoms_equaled = []
             for atom in atoms:
                 if Q2D:
-                    atom = generate_equal_atoms(atom,Q2D)
+                    atom = generate_equal_atoms(atom)
                 else:
                     atom = generate_equal_atoms_3D(atom)
                 for i in range(len(atom)):
@@ -438,9 +421,13 @@ elif sys.argv[1]  == 'process_data':
                 except(IndexError):
                     break
                 if next_line.startswith("Sorry"):
-                    data[index] = [next_line]
-                    data[index] = cal_metal_center_info(line)
                     i += 2
+                    data[index] = [next_line]
+                    try:
+                        data[index] = cal_metal_center_info(line)
+                    except(ValueError):
+                        # VASP relax failed
+                        continue
                 elif next_line.startswith('POSCAR'):
                     i += 1
                 else:
@@ -517,7 +504,8 @@ elif sys.argv[1]  == 'process_data':
                 file.write("\n")
 
         with open(res_target_energy_path, 'w',encoding= 'utf-8') as file:
-            sorted_res = sorted(target_merged_data.items(), key=lambda item: item[1]['energy'][0])
+            filtered_items = [item for item in target_merged_data.items() if 'energy' in item[1] and isinstance(item[1]['energy'], tuple)]
+            sorted_res = sorted(filtered_items, key=lambda item: item[1]['energy'][0])
             sorted_res_re = [{'id':i[0],'info':i[1]} for i in sorted_res]
             for data in sorted_res_re:
                 file.write(f"POSCAR {data['id']} energy per atoms {data['info']['energy'][0]} {data['info']['energy'][1]}:\n")
