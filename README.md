@@ -7,8 +7,9 @@ Copy the whole files into workspace except *.md *.png and uncompiled IM2ODE fole
 ```bash
 conda create -n DFSE python=3.8
 conda activate DFSE
-pip install -r requirements.txt
+pip install pymatgen==2023.8.10 phonopy==2.30.0
 ```
+Also, vaspkit is required, with setting of POTCAR path, to help DFSE update POTCAR during first principle calculation.
 We highly recommand to use DFSE in a  high-performance cluster, with vaspkit tools, VASP DFT software and gcc >= 12.1.0. If running 2D materials better use a fix c version VASP or add OPTCELL file if VASP version = 6.x
 ### Files information
 - de.x -- compiled from IM<sup>2</sup>ODE package
