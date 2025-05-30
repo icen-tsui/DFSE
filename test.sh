@@ -2,7 +2,7 @@
 ulimit -s unlimited
 chmod 777 *
 
-pick_up="T" #change T or F to make pick up for previous running DFSE
+pick_up="F" #change T or F to make pick up for previous running DFSE
 # Output files
 results_file="./results.dat"
 log_file="./run.log"
