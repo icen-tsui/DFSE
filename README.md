@@ -112,3 +112,17 @@ submit the test.sh and waiting for program running
 The searching results is saved in ferro_search_results filefold and the detailed information is recorded in results.info file. Also, the results would be visualized and can be check in scatter_plot.html
 
 
+##citation
+
+If you are using our method or code, please consider citing our work:
+
+```
+@article{chen2025dfse,
+  title={DFSE: Inverse Design of Ferroelectrics from Spatial Symmetry Breaking Evolution},
+  author={Chen, Lei and Liu, Bang and Guo, Zhixin and Duan, Xiangmei and Fang, Guoyong and Zheng, Yi-Feng and Fang, Haiping and Zhang, Yue-Yu},
+  journal={Journal of Chemical Theory and Computation},
+  year={2025},
+  publisher={ACS Publications},
+  doi={10.1021/acs.jctc.5c00333}
+}
+```
