@@ -93,13 +93,13 @@ Layer_height=$LAYER_HEIGHT
 
 #polarization switch and choose crystal system for initial strcuture generation
 
-#polarization_3d = .TRUE.
-#crystal_system_3d = 2 3 4 5 6 7 
-#crystal_system_count_3d = 6
+polarization_3d = .TRUE.
+crystal_system_3d = 2 3 4 5 6 7 
+crystal_system_count_3d = 6
 
-polarization_2d = .TRUE.
-crystal_system_2d = 1 2 3 4 5 6  
-crystal_system_count_2d = 6
+#polarization_2d = .TRUE.
+#crystal_system_2d = 1 2 3 4 5 6  
+#crystal_system_count_2d = 6
 
 #FQFE switch and perturbation coefficient
 FQFE=.FALSE.
