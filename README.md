@@ -1,6 +1,7 @@
 # DFSE 
 
 ## Environment and files information
+make the IM2ODE.bck file to get de.x for DFSE
 Copy the whole files into workspace except *.md *.png and uncompiled IM2ODE folefold (use de.x - the compiled file).
 
 ### Environment
