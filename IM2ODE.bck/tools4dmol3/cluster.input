@@ -1,0 +1,30 @@
+
+# Task parameters
+Calculate                     optimize
+Opt_energy_convergence        2.0000e-005
+Opt_gradient_convergence      4.0000e-003 A
+Opt_displacement_convergence  5.0000e-003 A
+Opt_iterations                500
+Opt_max_displacement          0.3000 A
+Symmetry                      off
+
+# Electronic parameters
+Spin_polarization             unrestricted
+Charge                        2
+Basis                         dnp
+Pseudopotential               dspp
+Functional                    pbe
+Aux_density                   octupole
+Integration_grid              medium
+Occupation                    thermal 0.005
+Cutoff_Global                 4.5000 angstrom
+Scf_density_convergence       1.0000e-005
+Scf_charge_mixing             1.0000e-001
+Scf_spin_mixing               2.0000e-001
+Scf_iterations                300
+Scf_diis                      6 pulay
+Kpoints                       off
+
+# Kpoint definition file (intervals/offset): 
+
+# Calculated properties
