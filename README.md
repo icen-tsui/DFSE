@@ -24,7 +24,8 @@ We highly recommand to use DFSE in a  high-performance cluster, with vaspkit too
 |read_poscar.py| Read POSCAR file|
 | screening_POSCAR.py | Screening of centrosymmetric phases to ensure varity of structures|
 |get_POSCAR.py|Verify the symmetric of the structure --bounary problem of two-dimensional layer groups|
-|export_figures|Visualization the searching results|
+|export_figures.py|Visualization the searching results|
+|sampling.py|Use the Latin  hyperparameters method to sample the high dimension chemical space to obtain the initial structures|
 ---
 
 - test.sh -- bash script for main program 
