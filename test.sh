@@ -127,7 +127,7 @@ SelectiveDynamics=F
 Q2D=F
 vacuum_layer=15
 Area=$AREA
-Layer_height=$LAYER_HEIGHT
+Layer_hight=$LAYER_HEIGHT
 
 #cluster=T
 #model_ball=1.0
